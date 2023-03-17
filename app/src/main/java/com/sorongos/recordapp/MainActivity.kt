@@ -3,14 +3,17 @@ package com.sorongos.recordapp
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.MediaRecorder
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.sorongos.recordapp.databinding.ActivityMainBinding
+import java.io.IOException
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -18,10 +21,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private lateinit var binding: ActivityMainBinding
+    private var recorder: MediaRecorder? = null
+    private var fileName: String = ""
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        //절대경로
+        fileName = "${externalCacheDir?.absolutePath}/audioRecordTest.3gp"
 
         binding.recordButton.setOnClickListener {
             when {
@@ -30,6 +38,7 @@ class MainActivity : AppCompatActivity() {
                     android.Manifest.permission.RECORD_AUDIO
                 ) == PackageManager.PERMISSION_GRANTED -> {
                     // 실제 녹음 시작
+                    onRecord()
                 }
                 //교육용 팝업
                 shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) -> {
@@ -42,6 +51,27 @@ class MainActivity : AppCompatActivity() {
                     requestRecordAudio()
                 }
             }
+        }
+
+    }
+
+    private fun onRecord() {
+        recorder = MediaRecorder().apply {
+            //마이크 사용하겠다
+            setAudioSource(MediaRecorder.AudioSource.MIC)
+            //포맷 설정
+            setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
+            //파일 이름
+            setOutputFile(fileName)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+
+            try{
+                prepare()
+            } catch (e: IOException){
+                Log.e("app","prepare() failed ${e}")
+            }
+
+            start()
         }
 
     }
@@ -75,8 +105,7 @@ class MainActivity : AppCompatActivity() {
                 && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
 
         if (audioRecordPermissionGranted) {
-            //todo
-
+            onRecord()
         } else {
             if (shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)) {
                 showPermissionInfoDialog()
