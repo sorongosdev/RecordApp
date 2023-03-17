@@ -18,6 +18,8 @@ class WaveformView @JvmOverloads constructor(
     private val ampList = mutableListOf<Float>()
     /**그려질 애들의 데이터*/
     private val rectList = mutableListOf<RectF>()
+    private val rectWidth = 10f
+    private var tick = 0
 
     private val redPaint = Paint().apply{
         color = Color.RED
@@ -31,12 +33,9 @@ class WaveformView @JvmOverloads constructor(
     }
 
     fun addAmplitude(maxAmplitude: Float) {
-
         ampList.add(maxAmplitude/10)
         rectList.clear()
 
-        /**하나의 rect의 width*/
-        val rectWidth = 10f
         /**가로에 몇개의 rect?*/
         val maxRect= (this.width/rectWidth).toInt()
 
@@ -55,5 +54,36 @@ class WaveformView @JvmOverloads constructor(
         }
 
         invalidate() //ondraw를 다시부름
+    }
+
+    fun replayAmplitude(duration:Int){
+        rectList.clear()
+
+        val maxRect = (this.width / rectWidth).toInt()
+        val amps = ampList.take(tick).takeLast(maxRect)
+
+        /**리스트 재구성*/
+        for((i,amp) in amps.withIndex()){
+            val rectF = RectF()
+            rectF.top = 0f
+            rectF.bottom = amp
+            rectF.left = i * rectWidth // 오른쪽으로 x좌표가 늘어남
+            rectF.right = rectF.left + rectWidth
+
+            rectList.add(rectF)
+        }
+
+        tick++
+
+        invalidate()
+    }
+
+    fun clearData(){
+        ampList.clear()
+    }
+    fun clearWave(){
+        rectList.clear()
+        tick = 0
+        invalidate()
     }
 }

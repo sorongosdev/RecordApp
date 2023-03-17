@@ -93,6 +93,9 @@ class MainActivity : AppCompatActivity(), OnTimerTickListener {
             start()
         }
 
+        binding.waveFormView.clearWave()
+        timer.start()
+
         //녹음 끝
         player?.setOnCompletionListener {
             stopPlaying()
@@ -107,6 +110,9 @@ class MainActivity : AppCompatActivity(), OnTimerTickListener {
 
         player?.release()
         player = null
+
+        timer.stop()
+
         binding.recordButton.isEnabled = true
         binding.recordButton.alpha = 1f
     }
@@ -175,12 +181,13 @@ class MainActivity : AppCompatActivity(), OnTimerTickListener {
             try {
                 prepare()
             } catch (e: IOException) {
-                Log.e("app", "prepare() failed ${e}")
+                Log.e("app", "prepare() failed $e")
             }
 
             start()
         }
 
+        binding.waveFormView.clearData()
         timer.start()
 
         binding.recordButton.setImageDrawable(
@@ -258,8 +265,13 @@ class MainActivity : AppCompatActivity(), OnTimerTickListener {
         val second = (duration / 1000) % 60
         val minute = (duration / 1000 / 60)
 
-        binding.timerTextView.text = String.format("%02d:%02d.%02d",minute,second,millisecond/10)
+        binding.timerTextView.text =
+            String.format("%02d:%02d.%02d", minute, second, millisecond / 10)
 
-        binding.waveFormView.addAmplitude(recorder?.maxAmplitude?.toFloat() ?: 0f)
+        if (state == State.PLAYING) {
+            binding.waveFormView.replayAmplitude(duration.toInt())
+        } else if (state == State.RECORDING) {
+            binding.waveFormView.addAmplitude(recorder?.maxAmplitude?.toFloat() ?: 0f)
+        }
     }
 }
