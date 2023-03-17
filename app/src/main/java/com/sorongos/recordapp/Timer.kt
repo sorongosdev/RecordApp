@@ -9,7 +9,7 @@ class Timer(listener: OnTimerTickListener) {
     private val handler = android.os.Handler(Looper.getMainLooper())
     private val runnable: Runnable = object: Runnable{
         override fun run() {
-            duration += 100L
+            duration += 40L
             handler.postDelayed(this, 100L)
             listener.onTick(duration)
         }
@@ -17,7 +17,7 @@ class Timer(listener: OnTimerTickListener) {
 
     /**처음 실행c*/
     fun start(){
-        handler.postDelayed(runnable, 100L)
+        handler.postDelayed(runnable, 40L)
     }
     fun stop(){
         handler.removeCallbacks(runnable)

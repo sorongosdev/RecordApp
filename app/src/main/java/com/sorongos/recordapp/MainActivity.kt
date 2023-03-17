@@ -254,6 +254,12 @@ class MainActivity : AppCompatActivity(), OnTimerTickListener {
     }
 
     override fun onTick(duration: Long) {
+        val millisecond = duration % 1000
+        val second = (duration / 1000) % 60
+        val minute = (duration / 1000 / 60)
+
+        binding.timerTextView.text = String.format("%02d:%02d.%02d",minute,second,millisecond/10)
+
         binding.waveFormView.addAmplitude(recorder?.maxAmplitude?.toFloat() ?: 0f)
     }
 }
