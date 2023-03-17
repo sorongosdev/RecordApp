@@ -3,6 +3,7 @@ package com.sorongos.recordapp
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.media.MediaRecorder
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
@@ -11,7 +12,9 @@ import android.provider.Settings
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
+import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.startActivity
 import com.sorongos.recordapp.databinding.ActivityMainBinding
 import java.io.IOException
 
@@ -20,9 +23,15 @@ class MainActivity : AppCompatActivity() {
         private const val REQUEST_RECORD_AUDIO_CODE = 200
     }
 
+    private enum class State {
+        RELEASE, RECORDING, PLAYING
+    }
+
     private lateinit var binding: ActivityMainBinding
     private var recorder: MediaRecorder? = null
     private var fileName: String = ""
+    private var state: State = State.RELEASE
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -32,30 +41,71 @@ class MainActivity : AppCompatActivity() {
         fileName = "${externalCacheDir?.absolutePath}/audioRecordTest.3gp"
 
         binding.recordButton.setOnClickListener {
-            when {
-                ContextCompat.checkSelfPermission(
-                    this,
-                    android.Manifest.permission.RECORD_AUDIO
-                ) == PackageManager.PERMISSION_GRANTED -> {
-                    // 실제 녹음 시작
-                    onRecord()
+            when (state) {
+                State.RELEASE -> {
+                    record()
                 }
-                //교육용 팝업
-                shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) -> {
-                    showPermissionInfoDialog()
+                State.RECORDING -> {
+                    onRecord(false)
                 }
-                //진짜 팝업
-                else -> {
-                    // You can directly ask for the permission.
-                    // The registered ActivityResultCallback gets the result of this request.
-                    requestRecordAudio()
+                State.PLAYING -> {
+
                 }
             }
+
         }
 
     }
 
-    private fun onRecord() {
+    private fun record() {
+        when {
+            ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                // 실제 녹음 시작
+                onRecord(true)
+            }
+            //교육용 팝업
+            shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) -> {
+                showPermissionInfoDialog()
+            }
+            //진짜 팝업
+            else -> {
+                // You can directly ask for the permission.
+                // The registered ActivityResultCallback gets the result of this request.
+                requestRecordAudio()
+            }
+        }
+    }
+
+    //start인지 확인
+    private fun onRecord(start: Boolean) = if (start) startRecording() else stopRecording()
+
+    private fun stopRecording() {
+        recorder?.apply {
+            stop()
+            release()
+        }
+        recorder = null
+        state = State.RELEASE
+
+        binding.recordButton.setImageDrawable(
+            ContextCompat.getDrawable(
+                this,
+                R.drawable.baseline_fiber_manual_record_24
+            )
+        )
+        binding.recordButton.imageTintList =
+            ColorStateList.valueOf(ContextCompat.getColor(this, R.color.red))
+        binding.playButton.isEnabled = true
+        binding.playButton.alpha = 1f
+    }
+
+
+    private fun startRecording() {
+        state = State.RECORDING
+
         recorder = MediaRecorder().apply {
             //마이크 사용하겠다
             setAudioSource(MediaRecorder.AudioSource.MIC)
@@ -65,14 +115,24 @@ class MainActivity : AppCompatActivity() {
             setOutputFile(fileName)
             setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
 
-            try{
+            try {
                 prepare()
-            } catch (e: IOException){
-                Log.e("app","prepare() failed ${e}")
+            } catch (e: IOException) {
+                Log.e("app", "prepare() failed ${e}")
             }
 
             start()
         }
+        binding.recordButton.setImageDrawable(
+            ContextCompat.getDrawable(
+                this,
+                R.drawable.baseline_stop_24
+            )
+        )
+        binding.recordButton.imageTintList =
+            ColorStateList.valueOf(ContextCompat.getColor(this, R.color.black))
+        binding.playButton.isEnabled = false
+        binding.playButton.alpha = 0.3f
 
     }
 
@@ -105,7 +165,7 @@ class MainActivity : AppCompatActivity() {
                 && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
 
         if (audioRecordPermissionGranted) {
-            onRecord()
+            onRecord(true)
         } else {
             if (shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)) {
                 showPermissionInfoDialog()
