@@ -19,7 +19,7 @@ import androidx.core.content.ContextCompat.startActivity
 import com.sorongos.recordapp.databinding.ActivityMainBinding
 import java.io.IOException
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), OnTimerTickListener {
     companion object {
         private const val REQUEST_RECORD_AUDIO_CODE = 200
     }
@@ -27,6 +27,8 @@ class MainActivity : AppCompatActivity() {
     private enum class State {
         RELEASE, RECORDING, PLAYING
     }
+
+    private lateinit var timer: Timer
 
     private lateinit var binding: ActivityMainBinding
     private var recorder: MediaRecorder? = null
@@ -41,6 +43,7 @@ class MainActivity : AppCompatActivity() {
 
         //절대경로
         fileName = "${externalCacheDir?.absolutePath}/audioRecordTest.3gp"
+        timer = Timer(this)
 
         binding.recordButton.setOnClickListener {
             when (state) {
@@ -139,6 +142,9 @@ class MainActivity : AppCompatActivity() {
             release()
         }
         recorder = null
+
+        timer.stop()
+
         state = State.RELEASE
 
         binding.recordButton.setImageDrawable(
@@ -174,6 +180,9 @@ class MainActivity : AppCompatActivity() {
 
             start()
         }
+
+        timer.start()
+
         binding.recordButton.setImageDrawable(
             ContextCompat.getDrawable(
                 this,
@@ -242,5 +251,9 @@ class MainActivity : AppCompatActivity() {
             data = Uri.fromParts("package", packageName, null)
         }
         startActivity(intent)
+    }
+
+    override fun onTick(duration: Long) {
+        binding.waveFormView.addAmplitude(recorder?.maxAmplitude?.toFloat() ?: 0f)
     }
 }
