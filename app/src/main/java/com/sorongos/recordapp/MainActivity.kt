@@ -41,6 +41,8 @@ class MainActivity : AppCompatActivity(), OnTimerTickListener {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+
+
         //절대경로
         fileName = "${externalCacheDir?.absolutePath}/audioRecordTest.3gp"
         timer = Timer(this)
@@ -269,7 +271,7 @@ class MainActivity : AppCompatActivity(), OnTimerTickListener {
             String.format("%02d:%02d.%02d", minute, second, millisecond / 10)
 
         if (state == State.PLAYING) {
-            binding.waveFormView.replayAmplitude(duration.toInt())
+            binding.waveFormView.replayAmplitude()
         } else if (state == State.RECORDING) {
             binding.waveFormView.addAmplitude(recorder?.maxAmplitude?.toFloat() ?: 0f)
         }
