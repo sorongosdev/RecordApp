@@ -16,39 +16,46 @@ class WaveformView @JvmOverloads constructor(
 
     /**소리데이터, 계속 추가됨*/
     private val ampList = mutableListOf<Float>()
+
     /**그려질 애들의 데이터*/
     private val rectList = mutableListOf<RectF>()
-    private val rectWidth = 10f
+    private val rectWidth = 15f
     private var tick = 0
 
-    private val redPaint = Paint().apply{
+    private val redPaint = Paint().apply {
         color = Color.RED
     }
+
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
 
-        for(rectF in rectList){
+        for (rectF in rectList) {
             canvas?.drawRect(rectF, redPaint)
         }
     }
 
     fun addAmplitude(maxAmplitude: Float) {
-        ampList.add(maxAmplitude/10)
+
+        val height = this.height
+        //amplitude 보정치
+        val amplitude = maxAmplitude / Short.MAX_VALUE * this.height * 0.8f
+
+        ampList.add(amplitude)
         rectList.clear()
 
         /**가로에 몇개의 rect?*/
-        val maxRect= (this.width/rectWidth).toInt()
+        val maxRect = (this.width / rectWidth).toInt()
 
         //최신거 업데이트
         val amps = ampList.takeLast(maxRect)
 
         /**인덱스값과 함께 받아옴*/
-        for((i,amp) in amps.withIndex()){
+        for ((i, amp) in amps.withIndex()) {
             val rectF = RectF()
-            rectF.top = 0f
-            rectF.bottom = amp
+            rectF.top = (this.height / 2) - amp / 2 // 중간으로 보내고, 위로 절반 올라감
+            rectF.bottom = rectF.top + amp
             rectF.left = i * rectWidth // 오른쪽으로 x좌표가 늘어남
-            rectF.right = rectF.left + rectWidth
+            rectF.right = rectF.left + (rectWidth - 5f)
 
             rectList.add(rectF)
         }
@@ -56,19 +63,20 @@ class WaveformView @JvmOverloads constructor(
         invalidate() //ondraw를 다시부름
     }
 
-    fun replayAmplitude(duration:Int){
+    /**녹음한 거 재생*/
+    fun replayAmplitude() {
         rectList.clear()
 
         val maxRect = (this.width / rectWidth).toInt()
         val amps = ampList.take(tick).takeLast(maxRect)
 
         /**리스트 재구성*/
-        for((i,amp) in amps.withIndex()){
+        for ((i, amp) in amps.withIndex()) {
             val rectF = RectF()
-            rectF.top = 0f
-            rectF.bottom = amp
+            rectF.top = (this.height / 2) - amp / 2
+            rectF.bottom = rectF.top + amp
             rectF.left = i * rectWidth // 오른쪽으로 x좌표가 늘어남
-            rectF.right = rectF.left + rectWidth
+            rectF.right = rectF.left + (rectWidth - 5f)
 
             rectList.add(rectF)
         }
@@ -78,10 +86,11 @@ class WaveformView @JvmOverloads constructor(
         invalidate()
     }
 
-    fun clearData(){
+    fun clearData() {
         ampList.clear()
     }
-    fun clearWave(){
+
+    fun clearWave() {
         rectList.clear()
         tick = 0
         invalidate()
